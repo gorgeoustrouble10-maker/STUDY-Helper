@@ -19,8 +19,12 @@
     "setup": "prisma generate && prisma migrate deploy && tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^3.0.64",
+    "@ai-sdk/openai-compatible": "^3.0.68",
+    "@ai-sdk/react": "^4.0.143",
     "@prisma/adapter-better-sqlite3": "7.10.0",
     "@prisma/client": "7.10.0",
+    "ai": "^7.0.140",
     "jszip": "3.10.2",
     "katex": "0.19.0",
     "lucide-react": "1.56.0",
