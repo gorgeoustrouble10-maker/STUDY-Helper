@@ -1,0 +1,13 @@
+services:
+  garden:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      DATA_DIR: /app/data
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+    volumes:
+      - garden-data:/app/data
+    restart: unless-stopped
+volumes:
+  garden-data:

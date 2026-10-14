@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "sqlite"
+}
+model Record {
+  id String @id @default(uuid())
+  kind String
+  title String
+  body String @default("")
+  status String @default("ACTIVE")
+  version Int @default(1)
+  archivedAt DateTime?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  domain Domain?
+  course Course?
+  project Project?
+  action Action?
+  issue Issue?
+  resource Resource?
+  review Review?
+  person Person?
+  item Item?
+  account Account?
+  transaction Transaction?
+  budget Budget?
+  channel Channel?
+  publication Publication?
+  outgoing RecordLink[] @relation("From")
+  incoming RecordLink[] @relation("To")
+  tags RecordTag[]
+  attachments Attachment[]
+  revisions Revision[]
+  @@index([kind, deletedAt, archivedAt])
+}
+model Domain {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  group String @default("个人成长")
+  focus String @default("")
+}
+model Course {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  semester String @default("")
+  chapters String @default("")
+  criteria String @default("")
+}
+model Project {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  outcome String @default("")
+  criteria String @default("")
+  stage String @default("构想")
+  nextStep String @default("")
+  milestones String @default("")
+  decisions String @default("")
+  weeklyCommitment Boolean @default(false)
+}
+model Action {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  plannedAt DateTime?
+  dueAt DateTime?
+  remindAt DateTime?
+  priority Int @default(2)
+  important Boolean?
+  urgent Boolean?
+  blocker String @default("")
+  repeat String @default("NONE")
+  parentId String?
+  previousId String? @unique
+  todayFocus Boolean @default(false)
+  completedAt DateTime?
+}
+model Issue {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  observation String @default("")
+  impact String @default("")
+  hypothesis String @default("")
+  experiment String @default("")
+  checkAt DateTime?
+  result String @default("")
+}
+model Resource {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  url String @default("")
+  author String @default("")
+  resourceType String @default("网站")
+  assessment String @default("")
+}
+model Review {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  scope String @default("周复盘")
+  expected String @default("")
+  actual String @default("")
+  adjustment String @default("")
+  snapshots String @default("[]")
+}
+model Person {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  entityType String @default("人物")
+  organization String @default("")
+  contact String @default("")
+  experiences String @default("")
+  followUpAt DateTime?
+}
+model Item {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  location String @default("")
+  quantity Int @default(1)
+  maintenanceAt DateTime?
+}
+model Account {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  openingCents Int @default(0)
+  currency String @default("CNY")
+  transactions Transaction[]
+}
+model Transaction {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  accountId String
+  account Account @relation(fields: [accountId], references: [recordId])
+  amountCents Int
+  direction String @default("OUT")
+  category String @default("其他")
+  occurredAt DateTime @default(now())
+}
+model Budget {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  category String @default("其他")
+  period String
+  limitCents Int
+}
+model Channel {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  channel String @default("博客")
+  url String @default("")
+  publishedAt DateTime?
+}
+model Publication {
+  recordId String @id
+  record Record @relation(fields: [recordId], references: [id])
+  publicationType String @default("article")
+  slug String @unique
+  summary String @default("")
+  details String @default("{}")
+  selectedAssets String @default("[]")
+  currentVersionId String?
+  versions PublishedVersion[]
+}
+model PublishedVersion {
+  id String @id @default(uuid())
+  publicationId String
+  publication Publication @relation(fields: [publicationId], references: [recordId])
+  snapshot String
+  createdAt DateTime @default(now())
+  assets PublishedAsset[]
+}
+model RecordLink {
+  id String @id @default(uuid())
+  fromId String
+  toId String
+  relation String @default("related")
+  from Record @relation("From", fields: [fromId], references: [id])
+  to Record @relation("To", fields: [toId], references: [id])
+  @@unique([fromId, toId, relation])
+}
+model Tag {
+  id String @id @default(uuid())
+  name String @unique
+  aliases String @default("")
+  records RecordTag[]
+}
+model RecordTag {
+  recordId String
+  tagId String
+  record Record @relation(fields: [recordId], references: [id])
+  tag Tag @relation(fields: [tagId], references: [id])
+  @@id([recordId, tagId])
+}
+model Attachment {
+  id String @id @default(uuid())
+  recordId String
+  record Record @relation(fields: [recordId], references: [id])
+  name String
+  mime String
+  size Int
+  storageKey String @unique
+  createdAt DateTime @default(now())
+}
+model PublishedAsset {
+  id String @id @default(uuid())
+  versionId String
+  version PublishedVersion @relation(fields: [versionId], references: [id])
+  name String
+  mime String
+  storageKey String @unique
+}
+model Revision {
+  id String @id @default(uuid())
+  recordId String
+  record Record @relation(fields: [recordId], references: [id])
+  snapshot String
+  createdAt DateTime @default(now())
+}
+model Owner {
+  id String @id @default("owner")
+  username String @unique
+  passwordHash String
+}
+model Session {
+  tokenHash String @id
+  expiresAt DateTime
+}
+model LoginAttempt {
+  key String @id
+  count Int @default(0)
+  windowAt DateTime @default(now())
+}
+model Setting {
+  key String @id
+  value String
+}

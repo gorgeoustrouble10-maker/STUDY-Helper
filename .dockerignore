@@ -1,0 +1,11 @@
+node_modules
+.next
+.data
+.test-data
+.npm-cache
+.env*
+backups
+test-results
+playwright-report
+.git
+apps/study-board/

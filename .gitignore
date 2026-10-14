@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.data/
+.test-data/
+playwright-report/
+test-results/
+.env
+.env.local
+*.tsbuildinfo
+*.log
+.npm-cache/
+src/generated/prisma/
+backups/
+
+apps/study-board/
+.trae/
