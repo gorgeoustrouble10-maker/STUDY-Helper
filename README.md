@@ -87,7 +87,7 @@ Compose仅绑定本机3000端口，数据通过命名卷持久化。公网部署
 
 ## AI 助手（可选）
 
-工作台右下角的悬浮 AI 助手默认关闭。在 `.env` 中配置后重启生效（完整说明见 `.env.example`）：
+工作台右下角的悬浮 AI 助手默认关闭。日常使用（模式、确认与撤销、限额、FAQ）见 [AI 助手使用指南](docs/AI_GUIDE.md)。在 `.env` 中配置后重启生效（完整说明见 `.env.example`）：
 
 ```powershell
 AI_ENABLED=true
