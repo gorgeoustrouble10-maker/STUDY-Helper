@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "知行花园",
+    "slug": "study-helper",
+    "scheme": "studyhelper",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "cn.studyhelper.garden",
+      "versionCode": 2,
+      "allowBackup": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#243C30"
+      },
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 37,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "37.0.0",
+            "enableMinifyInReleaseBuilds": false
+          }
+        }
+      ],
+      "./plugins/with-signing.cjs",
+      "./plugins/with-http.cjs"
+    ]
+  }
+}

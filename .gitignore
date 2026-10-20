@@ -14,3 +14,13 @@ backups/
 
 apps/study-board/
 .trae/
+.DS_Store
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/.expo/
+apps/mobile/.credentials/
+apps/mobile/.claude/
+apps/mobile/dist/
+services/mobile-api/.data/
+artifacts/*.apk
+artifacts/*.sha256

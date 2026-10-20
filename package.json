@@ -16,7 +16,12 @@
     "restore": "tsx scripts/restore.ts",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "setup": "prisma generate && prisma migrate deploy && tsx scripts/seed.ts"
+    "setup": "prisma generate && prisma migrate deploy && tsx scripts/seed.ts",
+    "mobile:start": "npm --prefix apps/mobile start",
+    "mobile:typecheck": "npm --prefix apps/mobile run typecheck",
+    "mobile:test": "npm --prefix apps/mobile test",
+    "mobile:apk": "npm --prefix apps/mobile run android:release",
+    "test:mobile-api": "node --test services/mobile-api/*.test.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "7.10.0",

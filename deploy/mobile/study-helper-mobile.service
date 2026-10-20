@@ -1,0 +1,25 @@
+[Unit]
+Description=Study Helper isolated mobile API
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=study-helper-mobile
+WorkingDirectory=/opt/study-helper-mobile
+ExecStart=/opt/personal-garden/runtime/node-v24.19.0-linux-x64/bin/node /opt/study-helper-mobile/server.mjs
+Environment=PORT=13301
+Environment=MOBILE_DATA_DIR=/var/lib/study-helper-mobile
+EnvironmentFile=/etc/study-helper-mobile.env
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target
