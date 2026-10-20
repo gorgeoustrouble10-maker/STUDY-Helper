@@ -1,10 +1,11 @@
 services:
   garden:
-    build: .
+    build: ./apps/web
     ports:
       - "127.0.0.1:3000:3000"
     environment:
       DATA_DIR: /app/data
+      TZ: Asia/Shanghai
       SITE_URL: ${SITE_URL:-http://localhost:3000}
     volumes:
       - garden-data:/app/data

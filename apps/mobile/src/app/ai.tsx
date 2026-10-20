@@ -16,6 +16,7 @@ import { randomUUID } from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGarden } from "../context";
 import { blank } from "../data";
+import { TIME_ZONE } from "../dates";
 import type {
   AiConversation,
   AiDetail,
@@ -310,7 +311,9 @@ export default function AiAssistant() {
               >
                 <Text style={s.h2}>{c.title}</Text>
                 <Text style={s.small}>
-                  {new Date(c.updatedAt).toLocaleString("zh-CN")}
+                  {new Date(c.updatedAt).toLocaleString("zh-CN", {
+                    timeZone: TIME_ZONE,
+                  })}
                 </Text>
               </Pressable>
             ))}

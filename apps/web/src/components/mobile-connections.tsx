@@ -25,6 +25,6 @@ export function MobileConnections() {
     <button className="button secondary" disabled={busy} style={{ marginLeft: 8 }} onClick={() => { void refresh().catch(e => setError(e.message)); }}>刷新连接列表</button>
     {pair && <p role="status">配对码：<strong style={{ fontSize: 26, letterSpacing: 3 }}>{pair.code}</strong>（一次有效，{new Date(pair.expiresAt).toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai' })} 前使用；请勿分享）</p>}
     {error && <p role="alert" className="error-message">{error}</p>}
-    <ul>{devices.map(device => <li key={device.id} style={{ marginTop: 12 }}>{device.label} · 有效至 {new Date(device.expiresAt).toLocaleDateString('zh-CN')} <button disabled={busy} className="button secondary" onClick={() => operate({ action: 'revoke', id: device.id })}>撤销连接</button></li>)}</ul>
+    <ul>{devices.map(device => <li key={device.id} style={{ marginTop: 12 }}>{device.label} · 有效至 {new Date(device.expiresAt).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })} <button disabled={busy} className="button secondary" onClick={() => operate({ action: 'revoke', id: device.id })}>撤销连接</button></li>)}</ul>
   </section>;
 }

@@ -80,6 +80,7 @@ export const definitions: Record<
       { key: "dueAt", label: "真实截止时间", type: "date" },
       { key: "remindAt", label: "提醒时间", type: "date" },
       { key: "priority", label: "优先级（1最高）", type: "number" },
+      { key: "estimatedMinutes", label: "预计用时（分钟，可留空）", type: "number" },
       { key: "important", label: "重要", type: "checkbox" },
       { key: "urgent", label: "紧急", type: "checkbox" },
       { key: "blocker", label: "阻塞 / 等待原因", type: "textarea" },

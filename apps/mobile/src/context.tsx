@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import { AppState } from "react-native";
+import { TIME_ZONE } from "./dates";
 import * as SecureStore from "expo-secure-store";
 import { Repository, type RecordData, type LocalRecord } from "./data";
 import {
@@ -132,6 +133,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
       await synchronize(repo, authorized, update);
       setLastSync(
         new Date().toLocaleTimeString("zh-CN", {
+          timeZone: TIME_ZONE,
           hour: "2-digit",
           minute: "2-digit",
         }),

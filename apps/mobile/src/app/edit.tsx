@@ -11,6 +11,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { useGarden } from "../context";
 import { blank, type RecordData } from "../data";
+import { dateInput, dateToISO } from "../dates";
 import {
   definitions,
   statusLabels,
@@ -63,7 +64,16 @@ export default function Editor() {
     const fields = { ...record.fields };
     for (const field of definition.fields) {
       const value = fields[field.key];
-      if (value === undefined || value === "") continue;
+      if (field.type === "date") {
+        try {
+          fields[field.key] = dateToISO(value);
+        } catch (e) {
+          setError(`${field.label}：${(e as Error).message}`);
+          return;
+        }
+        continue;
+      }
+      if (value === undefined || value === null || value === "") continue;
       if (field.type === "number" || field.type === "money") {
         const raw = String(value);
         if (!/^-?\d+(\.\d{1,2})?$/.test(raw)) {
@@ -80,17 +90,11 @@ export default function Editor() {
           );
           return;
         }
-        fields[field.key] = n;
-      }
-      if (field.type === "date" && typeof value === "string") {
-        const parsed = new Date(
-          value.length === 10 ? `${value}T00:00:00+08:00` : value,
-        );
-        if (Number.isNaN(parsed.getTime())) {
-          setError(`${field.label}请使用 YYYY-MM-DD 格式`);
+        if (field.key === "estimatedMinutes" && n <= 0) {
+          setError("预计用时须为正整数分钟，或留空");
           return;
         }
-        fields[field.key] = parsed.toISOString();
+        fields[field.key] = n;
       }
     }
     if (
@@ -179,22 +183,31 @@ export default function Editor() {
     const displayed =
       field.type === "money" && typeof value === "number"
         ? (value / 100).toFixed(2)
-        : field.type === "date" && value
-          ? String(value).slice(0, 10)
+        : field.type === "date"
+          ? dateInput(value)
           : String(value ?? "");
     return (
       <Field
         key={field.key}
-        label={field.label}
+        label={
+          field.type === "date" ? `${field.label}（北京时间）` : field.label
+        }
         value={displayed}
-        onChangeText={(v) => fieldValue(field, v)}
+        onChangeText={(v) =>
+          fieldValue(
+            field,
+            field.key === "estimatedMinutes" && v === "" ? null : v,
+          )
+        }
         multiline={field.type === "textarea"}
         keyboardType={
           field.type === "money" || field.type === "number"
             ? "decimal-pad"
             : "default"
         }
-        placeholder={field.type === "date" ? "YYYY-MM-DD" : undefined}
+        placeholder={
+          field.type === "date" ? "YYYY-MM-DD 或 YYYY-MM-DD HH:mm" : undefined
+        }
         style={
           field.type === "textarea"
             ? { minHeight: 95, textAlignVertical: "top" }

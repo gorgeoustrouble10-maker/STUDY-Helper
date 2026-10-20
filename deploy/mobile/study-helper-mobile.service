@@ -9,6 +9,7 @@ StateDirectory=study-helper-mobile
 WorkingDirectory=/opt/study-helper-mobile
 ExecStart=/opt/personal-garden/runtime/node-v24.19.0-linux-x64/bin/node /opt/study-helper-mobile/server.mjs
 Environment=PORT=13301
+Environment=TZ=Asia/Shanghai
 Environment=MOBILE_DATA_DIR=/var/lib/study-helper-mobile
 EnvironmentFile=/etc/study-helper-mobile.env
 Restart=on-failure

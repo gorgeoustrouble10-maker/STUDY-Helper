@@ -4,6 +4,7 @@ import { useGarden } from "../../context";
 import { definitions, statusLabels } from "../../definitions";
 import { Button, Chip, Empty, Header, Page, RecordCard, s } from "../../ui";
 import Markdown from "../../components/Markdown";
+import { dateInput } from "../../dates";
 export default function Detail() {
   const { id } = useLocalSearchParams<{ id: string }>(),
     g = useGarden();
@@ -78,12 +79,14 @@ export default function Detail() {
             <Text selectable style={s.body}>
               {f.type === "money"
                 ? `¥ ${(Number(r.fields[f.key]) / 100).toFixed(2)}`
-                : typeof r.fields[f.key] === "boolean"
-                  ? r.fields[f.key]
-                    ? "是"
-                    : "否"
-                  : statusLabels[String(r.fields[f.key])] ||
-                    String(r.fields[f.key])}
+                : f.type === "date"
+                  ? `${dateInput(r.fields[f.key])}（北京时间）`
+                  : typeof r.fields[f.key] === "boolean"
+                    ? r.fields[f.key]
+                      ? "是"
+                      : "否"
+                    : statusLabels[String(r.fields[f.key])] ||
+                      String(r.fields[f.key])}
             </Text>
           </View>
         ))}

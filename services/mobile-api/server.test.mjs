@@ -55,6 +55,53 @@ const op = (r, baseVersion = 0) => ({
   record: r,
 });
 
+test("行动估时与新网页字段兼容，可清空并拒绝非法值；日期修改保留 UTC 时刻", async (t) => {
+  const { call, register } = await fixture(t);
+  const user = await register();
+  const push = async (r, version) =>
+    (
+      await call(
+        "/sync/push",
+        { operations: [op(r, version)] },
+        user.accessToken,
+      )
+    ).data.results[0];
+  const r = {
+    ...record(),
+    kind: "ACTION",
+    status: "TODO",
+    fields: { estimatedMinutes: 30, plannedAt: "2026-10-20T16:00:00.000Z" },
+  };
+  const first = await push(r, 0);
+  assert.equal(first.status, "ok");
+  assert.equal(first.record.fields.estimatedMinutes, 30);
+  assert.equal(first.record.fields.plannedAt, "2026-10-20T16:00:00.000Z");
+  const updated = await push(
+    {
+      ...first.record,
+      fields: { estimatedMinutes: null, plannedAt: "2026-10-21T16:00:00.000Z" },
+    },
+    1,
+  );
+  assert.equal(updated.record.fields.plannedAt, "2026-10-21T16:00:00.000Z");
+  assert.equal(updated.record.fields.estimatedMinutes, null);
+  assert.equal(updated.record.createdAt, first.record.createdAt);
+  for (const value of [0, -1, 1.5, "30"]) {
+    const result = await push(
+      { ...updated.record, fields: { estimatedMinutes: value } },
+      2,
+    );
+    assert.equal(result.status, "error");
+    assert.equal(result.code, "INVALID_ESTIMATE");
+  }
+  const cleared = await push(
+    { ...updated.record, fields: { estimatedMinutes: null, plannedAt: null } },
+    2,
+  );
+  assert.equal(cleared.status, "ok");
+  assert.equal(cleared.record.fields.plannedAt, null);
+});
+
 test("邀请码必须正确，失败不创建用户或会话；配置缺失关闭注册", async (t) => {
   const { call, db } = await fixture(t);
   for (const inviteCode of [undefined, "wrong", "TEST-INVITE"]) {
@@ -203,28 +250,57 @@ test("注册限速与同幂等键不同内容拒绝", async (t) => {
   assert.equal(last.status, 429);
 });
 
-test("重复行动后继唯一且父行动不能循环", async t => {
-  const {call,register,db}=await fixture(t);const user=await register();
-  const push=async operation=>(await call('/sync/push',{operations:[operation]},user.accessToken)).data.results[0];
-  const action={...record(),kind:'ACTION',status:'TODO',fields:{repeat:'MONTHLY',plannedAt:'2026-01-31T01:00:00.000Z'}};
-  const created=await push(op(action));
-  const completed=await push(op({...created.record,status:'DONE'},1));
-  assert.equal(completed.status,'ok');
-  let rows=db.prepare('SELECT doc FROM records WHERE user_id=?').all(user.user.id).map(r=>JSON.parse(r.doc));
-  assert.equal(rows.filter(r=>r.fields.previousId===action.id).length,1);
-  assert.equal(rows.find(r=>r.fields.previousId===action.id).fields.plannedAt,'2026-02-28T01:00:00.000Z');
-  const february=rows.find(r=>r.fields.previousId===action.id);
-  await push(op({...february,status:'DONE'},1));
-  const march=db.prepare('SELECT doc FROM records WHERE user_id=?').all(user.user.id).map(r=>JSON.parse(r.doc)).find(r=>r.fields.previousId===february.id);
-  assert.equal(march.fields.plannedAt,'2026-03-31T01:00:00.000Z');
-  const reopened=await push(op({...completed.record,status:'TODO'},2));
-  await push(op({...reopened.record,status:'DONE'},3));
-  rows=db.prepare('SELECT doc FROM records WHERE user_id=?').all(user.user.id).map(r=>JSON.parse(r.doc));
-  assert.equal(rows.filter(r=>r.fields.previousId===action.id).length,1);
-  const parent={...record(),kind:'ACTION',status:'TODO'};
-  const p=await push(op(parent));
-  const child={...record(),kind:'ACTION',status:'TODO',fields:{parentId:parent.id}};
-  const c=await push(op(child));assert.equal(c.status,'ok');
-  const cycle=await push(op({...p.record,fields:{parentId:child.id}},1));
-  assert.equal(cycle.code,'PARENT_CYCLE');
+test("重复行动后继唯一且父行动不能循环", async (t) => {
+  const { call, register, db } = await fixture(t);
+  const user = await register();
+  const push = async (operation) =>
+    (await call("/sync/push", { operations: [operation] }, user.accessToken))
+      .data.results[0];
+  const action = {
+    ...record(),
+    kind: "ACTION",
+    status: "TODO",
+    fields: { repeat: "MONTHLY", plannedAt: "2026-01-31T01:00:00.000Z" },
+  };
+  const created = await push(op(action));
+  const completed = await push(op({ ...created.record, status: "DONE" }, 1));
+  assert.equal(completed.status, "ok");
+  let rows = db
+    .prepare("SELECT doc FROM records WHERE user_id=?")
+    .all(user.user.id)
+    .map((r) => JSON.parse(r.doc));
+  assert.equal(rows.filter((r) => r.fields.previousId === action.id).length, 1);
+  assert.equal(
+    rows.find((r) => r.fields.previousId === action.id).fields.plannedAt,
+    "2026-02-28T01:00:00.000Z",
+  );
+  const february = rows.find((r) => r.fields.previousId === action.id);
+  await push(op({ ...february, status: "DONE" }, 1));
+  const march = db
+    .prepare("SELECT doc FROM records WHERE user_id=?")
+    .all(user.user.id)
+    .map((r) => JSON.parse(r.doc))
+    .find((r) => r.fields.previousId === february.id);
+  assert.equal(march.fields.plannedAt, "2026-03-31T01:00:00.000Z");
+  const reopened = await push(op({ ...completed.record, status: "TODO" }, 2));
+  await push(op({ ...reopened.record, status: "DONE" }, 3));
+  rows = db
+    .prepare("SELECT doc FROM records WHERE user_id=?")
+    .all(user.user.id)
+    .map((r) => JSON.parse(r.doc));
+  assert.equal(rows.filter((r) => r.fields.previousId === action.id).length, 1);
+  const parent = { ...record(), kind: "ACTION", status: "TODO" };
+  const p = await push(op(parent));
+  const child = {
+    ...record(),
+    kind: "ACTION",
+    status: "TODO",
+    fields: { parentId: parent.id },
+  };
+  const c = await push(op(child));
+  assert.equal(c.status, "ok");
+  const cycle = await push(
+    op({ ...p.record, fields: { parentId: child.id } }, 1),
+  );
+  assert.equal(cycle.code, "PARENT_CYCLE");
 });

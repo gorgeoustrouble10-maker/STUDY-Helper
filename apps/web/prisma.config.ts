@@ -3,9 +3,9 @@ import path from 'node:path';
 import fs from 'node:fs';
 const directory = path.resolve(process.env.DATA_DIR || '.data');
 const url = process.env.DATABASE_URL || `file:${path.join(directory, 'garden.db').replaceAll('\\', '/')}`;
-// On Windows the SQLite engine may fail without diagnostics when the file does
-// not yet exist. Create only a new empty file; never truncate an existing DB.
-if (process.platform === 'win32' && url.startsWith('file:')) {
+// SQLite's migration engine can fail before creating a missing database on
+// macOS as well as Windows. Exclusively create an empty file; never truncate data.
+if (url.startsWith('file:') && url !== 'file::memory:') {
   const file = url.slice(5);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   try { fs.closeSync(fs.openSync(file, 'wx')); }

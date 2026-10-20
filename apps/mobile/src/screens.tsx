@@ -330,7 +330,7 @@ export function Me() {
             </View>
             <View>
               <Text style={s.h2}>{g.session?.user.username}</Text>
-              <Text style={s.small}>个人数字花园 · 0.2.0</Text>
+              <Text style={s.small}>个人数字花园 · 0.2.1</Text>
             </View>
           </View>
           <SyncLine />

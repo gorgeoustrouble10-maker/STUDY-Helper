@@ -10,6 +10,10 @@ test-results/
 *.log
 .npm-cache/
 src/generated/prisma/
+apps/web/src/generated/prisma/
+*.db
+*.db-shm
+*.db-wal
 backups/
 
 apps/study-board/

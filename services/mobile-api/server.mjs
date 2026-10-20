@@ -231,6 +231,13 @@ export function createApplication({
         raw.fields.amountCents <= 0)
     )
       fail(400, "INVALID_MONEY", "金额必须是大于零的整数分");
+    if (
+      raw.kind === "ACTION" &&
+      raw.fields.estimatedMinutes != null &&
+      (!Number.isSafeInteger(raw.fields.estimatedMinutes) ||
+        raw.fields.estimatedMinutes <= 0)
+    )
+      fail(400, "INVALID_ESTIMATE", "预计用时须为正整数分钟，或留空");
     for (const [key, kind] of [
       ["accountId", "ACCOUNT"],
       ["parentId", "ACTION"],
@@ -426,7 +433,7 @@ export function createApplication({
       const method = request.method;
       if (method === "GET" && route === "/health")
         return send(200, {
-          data: { status: "ok", version: "0.2.0", registration: !!inviteCode },
+          data: { status: "ok", version: "0.2.1", registration: !!inviteCode },
         });
       const ip =
         request.socket.remoteAddress?.replace("::ffff:", "") || "unknown";

@@ -1,3 +1,4 @@
+process.env.TZ = 'Asia/Shanghai';
 /**
  * 示范内容填充脚本（贴合 seed.ts 的学生/数字花园场景）。
  *

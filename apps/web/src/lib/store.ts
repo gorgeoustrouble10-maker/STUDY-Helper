@@ -207,7 +207,9 @@ export async function updateRecord(id: string, raw: unknown, client: Client = db
     return client === db ? db.$transaction(run) : run(client);
 }
 export function nextOccurrence(value: Date, repeat: string) {
-    const result = new Date(value);
+    // Advance the Beijing calendar, including dates around local midnight.
+    const offset = 8 * 3600000;
+    const result = new Date(value.getTime() + offset);
     if (repeat === 'DAILY')
         result.setUTCDate(result.getUTCDate() + 1);
     else if (repeat === 'WEEKLY')
@@ -219,7 +221,7 @@ export function nextOccurrence(value: Date, repeat: string) {
         const max = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
         result.setUTCDate(Math.min(day, max));
     }
-    return result;
+    return new Date(result.getTime() - offset);
 }
 async function advanceAction(tx: Client, old: GardenRecord) {
     await tx.action.update({ where: { recordId: old.id }, data: { completedAt: new Date() } });

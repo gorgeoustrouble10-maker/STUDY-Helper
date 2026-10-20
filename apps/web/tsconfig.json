@@ -36,8 +36,6 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "apps/study-board/**",
-    "apps/mobile/**"
+    "node_modules"
   ]
 }
