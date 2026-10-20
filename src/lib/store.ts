@@ -24,6 +24,10 @@ function validatedFields(kind: Kind, input: Record<string, unknown>) {
         if (!(field.key in input))
             continue;
         const value = input[field.key];
+        if (field.key === 'estimatedMinutes' && value === null) {
+            output[field.key] = null;
+            continue;
+        }
         if (field.key === 'parentId' && !value) {
             output[field.key] = null;
             continue;
@@ -48,6 +52,8 @@ function validatedFields(kind: Kind, input: Record<string, unknown>) {
                 throw new AppError(400, `${field.label}必须是有效整数`);
             if (['amountCents', 'limitCents', 'quantity'].includes(field.key) && value < 0)
                 throw new AppError(400, `${field.label}不能为负数`);
+            if (field.key === 'estimatedMinutes' && value <= 0)
+                throw new AppError(400, '预计用时须为正整数分钟');
             if (field.key === 'priority' && (value < 1 || value > 3))
                 throw new AppError(400, '优先级必须为1至3');
             output[field.key] = value;

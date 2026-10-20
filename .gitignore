@@ -14,3 +14,5 @@ backups/
 
 apps/study-board/
 .trae/
+
+.local-mobile/
