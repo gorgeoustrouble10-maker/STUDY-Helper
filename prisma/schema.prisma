@@ -68,6 +68,7 @@ model Action {
   dueAt DateTime?
   remindAt DateTime?
   priority Int @default(2)
+  estimatedMinutes Int?
   important Boolean?
   urgent Boolean?
   blocker String @default("")
@@ -234,4 +235,101 @@ model LoginAttempt {
 model Setting {
   key String @id
   value String
+}
+
+model AiConversation {
+  id String @id @default(uuid())
+  ownerId String @default("owner")
+  title String @default("新对话")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages AiMessage[]
+  runs AiRun[]
+}
+model AiMessage {
+  id String @id @default(uuid())
+  conversationId String
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role String
+  parts String @default("[]")
+  status String @default("COMPLETE")
+  schemaVersion Int @default(1)
+  createdAt DateTime @default(now())
+  @@index([conversationId, createdAt])
+}
+model AiRun {
+  id String @id @default(uuid())
+  conversationId String
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  clientTurnId String
+  mode String
+  provider String
+  model String
+  status String @default("RUNNING")
+  activeOwnerKey String? @unique
+  sessionHash String
+  leaseToken String
+  leaseExpiresAt DateTime
+  input String
+  assistantMessageId String
+  usage String?
+  errorCode String?
+  toolCount Int @default(0)
+  createCount Int @default(0)
+  createdAt DateTime @default(now())
+  finishedAt DateTime?
+  operations AiOperation[]
+  events AiRunEvent[]
+  @@unique([conversationId, clientTurnId])
+}
+model AiOperation {
+  id String @id @default(uuid())
+  runId String
+  run AiRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  toolCallId String
+  type String
+  status String
+  payload String
+  hash String
+  recordId String?
+  expectedVersion Int?
+  before String @default("{}")
+  result String @default("{}")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@unique([runId, toolCallId])
+}
+model AiRunEvent {
+  id Int @id @default(autoincrement())
+  runId String
+  run AiRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  type String
+  data String
+  createdAt DateTime @default(now())
+  @@index([runId, id])
+}
+model AiRateLimit {
+  key String @id
+  windowAt DateTime
+  count Int
+}
+
+model MobilePairing {
+  codeHash String @id
+  expiresAt DateTime
+}
+model MobileSession {
+  id String @id @default(uuid())
+  tokenHash String @unique
+  label String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  mutations MobileMutation[]
+}
+model MobileMutation {
+  id String @id
+  sessionId String
+  session MobileSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  requestHash String
+  recordId String
 }

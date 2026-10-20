@@ -24,6 +24,10 @@ function validatedFields(kind: Kind, input: Record<string, unknown>) {
         if (!(field.key in input))
             continue;
         const value = input[field.key];
+        if (field.key === 'estimatedMinutes' && value === null) {
+            output[field.key] = null;
+            continue;
+        }
         if (field.key === 'parentId' && !value) {
             output[field.key] = null;
             continue;
@@ -48,6 +52,8 @@ function validatedFields(kind: Kind, input: Record<string, unknown>) {
                 throw new AppError(400, `${field.label}必须是有效整数`);
             if (['amountCents', 'limitCents', 'quantity'].includes(field.key) && value < 0)
                 throw new AppError(400, `${field.label}不能为负数`);
+            if (field.key === 'estimatedMinutes' && value <= 0)
+                throw new AppError(400, '预计用时须为正整数分钟');
             if (field.key === 'priority' && (value < 1 || value > 3))
                 throw new AppError(400, '优先级必须为1至3');
             output[field.key] = value;
@@ -171,11 +177,11 @@ export async function createRecord(raw: unknown, client: Client = db) {
     };
     return client === db ? db.$transaction(run) : run(client);
 }
-export async function updateRecord(id: string, raw: unknown) {
+export async function updateRecord(id: string, raw: unknown, client: Client = db) {
     const input = baseInput.parse(raw);
     if (!input.version)
         throw new AppError(400, '缺少编辑版本');
-    return db.$transaction(async (tx) => {
+    const run = async (tx: Client) => {
         const old = await getRecord(id, tx);
         if (old.deletedAt)
             throw new AppError(400, '请先从回收站恢复');
@@ -197,7 +203,8 @@ export async function updateRecord(id: string, raw: unknown) {
         if (input.kind === 'ACTION' && status !== 'DONE' && old.status === 'DONE')
             await tx.action.update({ where: { recordId: id }, data: { completedAt: null } });
         return getRecord(id, tx);
-    });
+    };
+    return client === db ? db.$transaction(run) : run(client);
 }
 export function nextOccurrence(value: Date, repeat: string) {
     const result = new Date(value);
@@ -227,8 +234,8 @@ async function advanceAction(tx: Client, old: GardenRecord) {
         await tx.action.update({ where: { recordId: next.id }, data: { previousId: old.id } });
     }
 }
-export async function recordOperation(id: string, operation: string, version: number) {
-    return db.$transaction(async (tx) => {
+export async function recordOperation(id: string, operation: string, version: number, client: Client = db) {
+    const run = async (tx: Client) => {
         const old = await getRecord(id, tx);
         if (operation === 'complete' && old.status === 'DONE')
             return old;
@@ -259,21 +266,29 @@ export async function recordOperation(id: string, operation: string, version: nu
             changes.status = definitions[old.kind].statuses[0];
         else
             throw new AppError(400, '未知操作');
-        await tx.record.update({ where: { id }, data: changes });
+        const changed = await tx.record.updateMany({ where: { id, version }, data: changes });
+        if (!changed.count) throw new AppError(409, '记录已改变，请刷新后重试');
+        await tx.revision.create({ data: { recordId: id, snapshot: JSON.stringify(old) } });
         if (operation === 'complete' && old.kind === 'ACTION')
             await advanceAction(tx, old);
         if (operation === 'reopen' && old.kind === 'ACTION')
             await tx.action.update({ where: { recordId: id }, data: { completedAt: null } });
         return getRecord(id, tx);
-    });
+    };
+    return client === db ? db.$transaction(run) : run(client);
 }
-export async function snapshotReview(id: string, version: number) {
-    const review = await getRecord(id);
-    if (review.kind !== 'REVIEW')
-        throw new AppError(400, '仅复盘支持快照');
-    const snapshots = await Promise.all(review.links.map(l => getRecord(l.toId)));
-    return db.$transaction(async (tx) => { const changed = await tx.record.updateMany({ where: { id, version }, data: { version: { increment: 1 } } }); if (!changed.count)
-        throw new AppError(409, '记录已改变'); await tx.review.update({ where: { recordId: id }, data: { snapshots: JSON.stringify(snapshots) } }); return getRecord(id, tx); });
+export async function snapshotReview(id: string, version: number, client: Client = db) {
+    const run = async (tx: Client) => {
+        const review = await getRecord(id, tx);
+        if (review.kind !== 'REVIEW' || review.deletedAt) throw new AppError(400, '仅有效复盘支持快照');
+        const snapshots = await Promise.all(review.links.map(l => getRecord(l.toId, tx)));
+        const changed = await tx.record.updateMany({ where: { id, version }, data: { version: { increment: 1 } } });
+        if (!changed.count) throw new AppError(409, '记录已改变');
+        await tx.revision.create({ data: { recordId: id, snapshot: JSON.stringify(review) } });
+        await tx.review.update({ where: { recordId: id }, data: { snapshots: JSON.stringify(snapshots) } });
+        return getRecord(id, tx);
+    };
+    return client === db ? db.$transaction(run) : run(client);
 }
 export async function listRecords(params: URLSearchParams) {
     const page = Math.max(1, Number(params.get('page')) || 1);

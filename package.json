@@ -21,11 +21,18 @@
     "mobile:typecheck": "npm --prefix apps/mobile run typecheck",
     "mobile:test": "npm --prefix apps/mobile test",
     "mobile:apk": "npm --prefix apps/mobile run android:release",
-    "test:mobile-api": "node --test services/mobile-api/*.test.mjs"
+    "test:mobile-api": "node --test services/mobile-api/*.test.mjs",
+    "dev:lan": "node scripts/dev-lan.mjs",
+    "mobile:prepare": "node scripts/prepare-mobile.mjs",
+    "verify:mobile": "tsx scripts/verify-mobile-http.ts"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^3.0.64",
+    "@ai-sdk/openai-compatible": "^3.0.68",
+    "@ai-sdk/react": "^4.0.143",
     "@prisma/adapter-better-sqlite3": "7.10.0",
     "@prisma/client": "7.10.0",
+    "ai": "^7.0.140",
     "jszip": "3.10.2",
     "katex": "0.19.0",
     "lucide-react": "1.56.0",
